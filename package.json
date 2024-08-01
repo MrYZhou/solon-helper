@@ -7,25 +7,44 @@
     "vscode": "^1.91.0"
   },
   "categories": [
-    "Programming Languages","Linters"
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "Maven",
+    "Java"
   ],
   "publisher": "larry",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MrYZhou/dy-btn.git"
+    "url": "https://github.com/MrYZhou/solon-helper.git"
   },
-  "icon":"favicon.ico",
+  "icon": "favicon.ico",
   "activationEvents": [
-    "onLanguage:java"
+    "workspaceContains:**/app.yml",
+    "workspaceContains:**/app.yaml"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "dy-btn.action",
-        "title": "add dynamic button"
+        "command": "solon.helper.initSolonProject",
+        "title": "从模板创建solon项目"
+      },
+      {
+        "command": "solon.helper.run",
+        "icon":"$(debug-start)",
+        "title": "运行solon"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "solon.helper.run",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
