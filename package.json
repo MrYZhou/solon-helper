@@ -1,5 +1,5 @@
 {
-  "name": "solon.helper",
+  "name": "solon-helper",
   "displayName": "Solon Helper",
   "description": "vscode的solon插件( vscode plugin for solon )",
   "version": "1.0.0",
@@ -33,7 +33,7 @@
       },
       {
         "command": "solon.helper.run",
-        "icon":"$(debug-start)",
+        "icon": "$(debug-start)",
         "title": "运行solon"
       }
     ],
@@ -55,16 +55,19 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.91.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/vscode": "^1.91.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
     "eslint": "^8.39.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.0.4",
-    "@vscode/test-electron": "^2.2.0"
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "solon-helper": "file:"
   }
 }
