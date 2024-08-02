@@ -4,7 +4,7 @@
   "description": "vscode的solon插件( vscode plugin for solon )",
   "version": "1.0.0",
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.92.0"
   },
   "categories": [
     "Programming Languages",
@@ -58,7 +58,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
-    "@types/vscode": "^1.91.0",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.0",
@@ -68,7 +68,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2",
-    "solon-helper": "file:"
+    "adm-zip": "^0.5.14",
+    "node-fetch": "^2.7.0"
   }
 }
