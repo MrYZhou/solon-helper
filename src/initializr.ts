@@ -1,22 +1,29 @@
 import * as vscode from 'vscode';
-import path = require('path');
-import fetch from 'node-fetch';
+import * as path from 'path';
+const fetch = require('node-fetch');
+const AdmZip = require('adm-zip');
 import * as  fs from 'fs';
-import * as tool from './tool';
+import * as tool from './tool/index';
 
 const os = require('os');
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.helper.initSolonProject', showDialog));
 };
 const dependenciesMap: any = {
-    'Solon Api':'solon-api',
-    'Solon Lib':'solon-core',
-    'Solon Job':'solon-job',
-    'Solon Web':'solon-web',
-    'Solon Rpc':'solon-rpc',
+    'Solon Api': 'solon-api',
+    'Solon Lib': 'solon-core',
+    'Solon Job': 'solon-job',
+    'Solon Web': 'solon-web',
+    'Solon Rpc': 'solon-rpc',
+};
+const javaVerMap: any = {
+    'Java 22': '22',
+    'Java 21': '21',
+    'Java 17': '17',
+    'Java 11': '11',
+    'Java 8': '1.8'
 };
 const showDialog = async () => {
-    let a = await downLoad({javaVer:'22',dependencies:'solon-api'});
     const items: vscode.QuickPickItem[] = [
         { label: 'Solon Api', description: 'Solon Lib + Smart-Http + StaticFiles + Cors', detail: 'A full-featured Solon application with extra libraries.' },
         { label: 'Solon Lib', description: 'Solon base shortcut package', detail: 'The core library for building Solon applications.' },
@@ -38,6 +45,23 @@ const showDialog = async () => {
         placeHolder: '请选择java版本', ignoreFocusOut: true
     });
     if (!javaVer) { return; }
+    javaVer = javaVerMap[javaVer];
+
+    let project = await vscode.window.showQuickPick([
+        'Maven', 'Gradle'], {
+        title: '创建solon项目',
+        placeHolder: '请选择构建方式', ignoreFocusOut: true
+    });
+    if (!project) { return; }
+    project = project === 'Gradle' ? 'gradle_kotlin' : 'maven';
+
+    let projectName = await vscode.window.showInputBox({
+        title: '创建solon项目',
+        placeHolder: '请输入项目名称,或使用默认',
+        ignoreFocusOut: true,
+        prompt: '项目名称'
+    });
+    if (!projectName) { projectName = dependencies + '-app'; }
 
     let workDir = path.join(os.homedir(), 'Desktop');
     let item = await vscode.window.showQuickPick(['桌面', '自定义'], {
@@ -66,31 +90,29 @@ const showDialog = async () => {
 
     // 下载项目
     if (workDir) {
-        let res = await downLoad({javaVer,dependencies});
-        if(res){
-            await tool.execFn('code .','');
+        let projectPath = path.join(workDir, projectName);
+        let res = await downLoad({ dependencies, javaVer, project, projectPath });
+        if (res) {
+            await tool.execFn('code .', projectPath);
         }
     }
 };
-const downLoad = (body:any) => {
-    return new Promise((resolve, reject) => {
-        const fileStream = fs.createWriteStream('./app.zip');
-        fileStream.on('finish', () => {
-            console.log('下载完成');
-            resolve(true);
-        });
+const downLoad = (data: any) => {
+    return new Promise((resolve) => {
 
-        let url = 'https://solon.noear.org/start/build.do';
-        fetch(url, {
-            method: 'post',
-            body
-        }).then(res => {
-            res.body?.pipe(fileStream);
-        }).catch(e => {
+        let url = `https://solon.noear.org/start/build.do?javaVer=${data.javaVer}&dependencies=${data.dependencies}&project=${data.project}`;
+
+        fetch(url).then((res: any) => {
+            res.body?.pipe(fs.createWriteStream(data.projectPath + '.zip').on('finish', () => {
+                const unzip = new AdmZip(data.projectPath + '.zip'); // 下载压缩包
+                unzip.extractAllTo(data.projectPath, /* overwrite*/ true); // 解压替换本地文件
+                fs.unlink(path.join(data.projectPath + '.zip'), () => { });
+                resolve(true);
+            }));
+        }).catch((e: any) => {
             //自定义异常处理
-            console.log(e);
             resolve(false);
         });
     });
 };
-export { initInitializr};
+export { initInitializr };

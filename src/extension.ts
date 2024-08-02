@@ -1,6 +1,5 @@
 
 import * as vscode from 'vscode';
-import * as tool from './tool';
 import { checkExtension } from './check';
 import { initInitializr } from './initializr';
 import { initStartButton } from './start';
