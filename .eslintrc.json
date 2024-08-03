@@ -9,14 +9,6 @@
         "@typescript-eslint"
     ],
     "rules": {
-        "@typescript-eslint/naming-convention": ["warn",{
-            "selector": "property",
-            "format": ["camelCase", "PascalCase", "UPPER_CASE"],
-            "custom": {
-              "regex": "^.*$",
-              "match": true
-            }
-          }],
         "@typescript-eslint/semi": "warn",
         "curly": "warn",
         "eqeqeq": "warn",
