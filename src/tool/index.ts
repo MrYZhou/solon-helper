@@ -79,12 +79,13 @@ type Config = {
 };
 const getConfig = () => {
     const editor = vscode.window.activeTextEditor as vscode.TextEditor;
-    const filePath = editor.document.uri.fsPath;
+    const focusFilePath = editor ? editor.document.uri.fsPath : '';
+    let currentDir = path.dirname(focusFilePath);
     let workspaceDir = vscode.workspace.workspaceFolders?.[0].uri.fsPath as string;
     let config:Config = {
-        currentDir: path.dirname(filePath),
+        currentDir,
         workspaceDir,
-        focusFilePath: filePath
+        focusFilePath
     };
     return config;
 };

@@ -3,11 +3,11 @@ import * as path from 'path';
 const fetch = require('node-fetch');
 const AdmZip = require('adm-zip');
 import * as  fs from 'fs';
-import * as tool from './tool/index';
+import * as tool from './tool';
 
 const os = require('os');
 const initInitializr = (context: vscode.ExtensionContext) => {
-    context.subscriptions.push(vscode.commands.registerCommand('solon.helper.initSolonProject', showDialog));
+    context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
 };
 const dependenciesMap: any = {
     'Solon Api': 'solon-api',
