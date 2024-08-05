@@ -2,6 +2,9 @@ vscode的solon插件
 
 功能：
 1. 从模板创建项目
+
+![alt text](image.png)
+
 2. 对yml,yaml配置文件增加键值提示
 
 vscode plugin for solon 

@@ -1,14 +1,15 @@
 import { exec } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 /**
  * 在vscode中打开命令执行
  * @param command 命令
  * @param sourceDir 执行位置
  */
-const  runInTerminal = (command: string, sourceDir: string = '') => {
-    if(!sourceDir) {
+const runInTerminal = (command: string, sourceDir: string = '') => {
+    if (!sourceDir) {
         sourceDir = getConfig().workspaceDir;
     }
     // 创建一个终端实例
@@ -82,7 +83,7 @@ const getConfig = () => {
     const focusFilePath = editor ? editor.document.uri.fsPath : '';
     let currentDir = path.dirname(focusFilePath);
     let workspaceDir = vscode.workspace.workspaceFolders?.[0].uri.fsPath as string;
-    let config:Config = {
+    let config: Config = {
         currentDir,
         workspaceDir,
         focusFilePath
@@ -90,4 +91,16 @@ const getConfig = () => {
     return config;
 };
 
-export { execFn, showMessage, getConfig ,runInTerminal};
+const isSolonProject = () => {
+    try {
+        let workspaceDir = vscode.workspace.workspaceFolders?.[0].uri.fsPath as string;
+        let filePath = path.join(workspaceDir, 'pom.xml');
+        const data = fs.readFileSync(filePath, 'utf8');
+        return data.includes('solon');
+    } catch (error) {
+        console.error(`Error reading file from disk: ${error}`);
+        throw error;
+    }
+};
+
+export { execFn, showMessage, getConfig, runInTerminal, isSolonProject };
