@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import * as tool from './tool';
+import * as path from 'path';
+const yaml = require('js-yaml');
+const fs = require('fs');
 // 获取指定内容行的行号
 function getLineInFile(text: string, targetLine: string): number {
     const lines = text.split("\n");
@@ -42,7 +45,6 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
     let count = getLineSpace(line);
     // 说明存在上层key
     if (count > 0) {
-        // 找上一个不是空行的line
         let lastNum = num;
         let lastLine = '';
         let spaceCount = 0;
@@ -52,7 +54,9 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
             // 获取行的缩进
             spaceCount = getLineSpace(lastLine);
             if (lastNum === 0) { break; }
-        } while (lastLine.trim() === '' || spaceCount === count);
+
+            // 找上一个不是空行的line且空格缩进只能递减的
+        } while (lastLine.trim() === '' || spaceCount >= count || lastLine.trim().startsWith('-'));
         prefix = getPrefix(content, lastLine,
             lastLine.endsWith(':') ?
                 lastLine.trim().replace(':', '') :
@@ -62,7 +66,7 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
     // 最后一次递归就不用在拼点了。
     return prefix.endsWith('.') ? prefix : prefix + '.';
 }
-class MyYamlCompletionProvider {
+class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }, token: any, context: any) {
         // 如果不是solon项目不提示，避免和boot提示冲突。
         if (!tool.isSolonProject()) { return null; };
@@ -72,10 +76,29 @@ class MyYamlCompletionProvider {
 
         const editor = vscode.window.activeTextEditor as vscode.TextEditor;
         let content = editor.document.getText();
-
         let prefixKey = getPrefix(content, line, '', -1);
 
         let trigger = context.triggerCharacter;
+
+
+
+        try {
+            // 读取配置json
+            const configContent = fs.readFileSync(path.join('tool', 'solon-configuration-metadata.json'), 'utf8');
+            console.log(configContent);
+        } catch (e) {
+            console.log(e);
+        }
+
+        // 读取yml配置信息
+        try {
+            const doc = yaml.load(content, 'utf8');
+            console.log(doc);
+        } catch (e) {
+            console.log(e);
+        }
+
+        // 添加补全建议
 
         let tip1 = new vscode.CompletionItem('server.http.gzip.mimeTypes', vscode.CompletionItemKind.Property);
         tip1.detail = 'gzip 启用类型';
@@ -93,7 +116,7 @@ class MyYamlCompletionProvider {
     }
 
     resolveCompletionItem(item: any, token: any) {
-        // 这里可以添加额外的逻辑来丰富自动完成项的细节，例如添加文档或代码片段
+        // 高级功能定制
         return item;
     }
 }
@@ -101,8 +124,7 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
     let provider = new MyYamlCompletionProvider();
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
-        provider as any,
-        '*', // 触发字符
+        provider as any
     ));
 };
 
