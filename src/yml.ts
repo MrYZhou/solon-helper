@@ -84,8 +84,8 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
 
         try {
             // 读取配置json
-            const configContent = fs.readFileSync(path.join('tool', 'solon-configuration-metadata.json'), 'utf8');
-            console.log(configContent);
+            const configContent = fs.readFileSync(path.join(__filename, '..', '..', 'resources', 'solon-configuration-metadata.json'), 'utf8');
+
         } catch (e) {
             console.log(e);
         }
