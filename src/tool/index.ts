@@ -103,4 +103,32 @@ const isSolonProject = () => {
     }
 };
 
-export { execFn, showMessage, getConfig, runInTerminal, isSolonProject };
+type YmlConfig = {
+    name:string
+    defaultValue:boolean
+    description:string
+    moreDetail:string
+};
+let ymlTips: any;
+function getYmlTips() {
+    return new Promise<YmlConfig[]>(async (resolve, reject) => {
+        try {
+            if (!ymlTips) {
+                // 读取配置json
+                const extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
+                const resourcePath = vscode.Uri.file(`${extensionPath}/resources/solon-configuration-metadata.json`);
+
+                let contents = await vscode.workspace.fs.readFile(resourcePath);
+                const configContent = contents.toString();
+                ymlTips = JSON.parse(configContent).properties;
+            }
+            resolve(ymlTips);
+        } catch (error) {
+            console.log(error);
+        }
+    });
+}
+
+export { execFn, showMessage, getConfig, runInTerminal, isSolonProject, getYmlTips };
+
+

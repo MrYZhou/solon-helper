@@ -79,40 +79,26 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
         const editor = vscode.window.activeTextEditor as vscode.TextEditor;
         let content = editor.document.getText();
         let prefixKey = getPrefix(content, line, '', -1);
-
-        let trigger = context.triggerCharacter;
-
-        try {
-            // 读取配置json
-            const configContent = fs.readFileSync(path.join(__filename, '..', '..', 'resources', 'solon-configuration-metadata.json'), 'utf8');
-
-        } catch (e) {
-            console.log(e);
-        }
-
-        // 读取yml配置信息
-        try {
-            const doc = yaml.load(content, 'utf8');
-            console.log(doc);
-        } catch (e) {
-            console.log(e);
-        }
+        let subPath = (prefixKey === '.' ? '' : prefixKey) + line.trim();
 
         // 添加补全建议
-
-        let tip1 = new vscode.CompletionItem('server.http.gzip.mimeTypes', vscode.CompletionItemKind.Property);
-        tip1.detail = 'gzip 启用类型';
-        let markdown = new vscode.MarkdownString(`gzip 启用类型<br>
-            更多内容参考: [https://code.visualstudio.com/api/references/icons-in-labels#icon-listing](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing)`);
-        markdown.isTrusted = true;
-        tip1.documentation = markdown;
-        return {
-            items: [
-                tip1,
-                new vscode.CompletionItem('solon.app.ff', vscode.CompletionItemKind.Property),
-                new vscode.CompletionItem('attribute2', vscode.CompletionItemKind.Property),
-            ]
-        };
+        let items: vscode.CompletionItem[] = [];
+        let config: any[] = await tool.getYmlTips();
+        config.forEach(element => {
+            if (isSubPath(subPath, element.name)) {
+                let tip = new vscode.CompletionItem(element.name, vscode.CompletionItemKind.Property);
+                tip.detail = element.description;
+                tip.command = {
+                    command: 'solon-helper.acceptComplete', title: '',
+                    arguments: [editor, element.name]
+                };
+                let markdown = new vscode.MarkdownString(element.moreDetail);
+                markdown.isTrusted = true;
+                tip.documentation = markdown;
+                items.push(tip);
+            }
+        });
+        return { items };
     }
 
     resolveCompletionItem(item: any, token: any) {
@@ -125,6 +111,51 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
     ));
-};
+    context.subscriptions.push(vscode.commands.registerCommand('solon-helper.acceptComplete', (editor, addKey) => {
+        // 读取yml配置信息,更新key后写入文件
+        try {
+            // 获取文档
+            const document = editor.document;
+            // 执行编辑操作
+            editor.edit((editBuilder: any) => {
+                let originContent = document.getText().replace(addKey, '');
+                const doc = yaml.load(originContent, 'utf8');
 
+                // todo 处理复合key生成
+                // doc['solon.app'].a=111;
+                
+                let newYamlData = yaml.dump(doc, {
+                    'styles': { '!!null': 'canonical' },
+                    'sortKeys': false        // sort object keys
+                });
+                
+                editBuilder.replace(new vscode.Range(document.lineAt(0).range.start, document.lineAt(document.lineCount - 1).range.end), newYamlData);
+            }).then(() => {
+                // todo 成功替换后跳转指定行，鼠标focus
+                
+            }).catch((error: any) => {
+                // 错误处理
+                vscode.window.showErrorMessage(`Failed to replace file content: ${error}`);
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }));
+
+};
+function isSubPath(subPath: string, mainPath: string) {
+    let subParts = subPath.replace('.', '').split('');
+    let mainParts = mainPath.replace('.', '').split('');
+
+    let subIndex = 0;
+    let mainIndex = 0;
+
+    while (mainIndex < mainParts.length && subIndex < subParts.length) {
+        if (subParts[subIndex] === mainParts[mainIndex]) {
+            subIndex++;
+        }
+        mainIndex++;
+    }
+    return subIndex === subParts.length;
+}
 export { initYmlSuggestion };
