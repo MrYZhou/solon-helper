@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import * as tool from './tool';
 import * as path from 'path';
-const yaml = require('js-yaml');
-const fs = require('fs');
+import * as  fs from 'fs';
+
+let yaml: any;
 // 获取指定内容行的行号
 function getLineInFile(text: string, targetLine: string): number {
     const lines = text.split("\n");
@@ -68,6 +68,8 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
 }
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }, token: any, context: any) {
+        const tool = await import('./tool');
+        if (!yaml) { yaml = require('js-yaml'); }
         // 如果不是solon项目不提示，避免和boot提示冲突。
         if (!tool.isSolonProject()) { return null; };
 
@@ -79,8 +81,6 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
         let prefixKey = getPrefix(content, line, '', -1);
 
         let trigger = context.triggerCharacter;
-
-
 
         try {
             // 读取配置json
@@ -121,10 +121,9 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 const initYmlSuggestion = (context: vscode.ExtensionContext) => {
-    let provider = new MyYamlCompletionProvider();
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
-        provider as any
+        new MyYamlCompletionProvider()
     ));
 };
 

@@ -1,11 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-const fetch = require('node-fetch');
-const AdmZip = require('adm-zip');
 import * as  fs from 'fs';
-import * as tool from './tool';
-
-const os = require('os');
+import * as  os from 'os';
+let fetch: any;
+let AdmZip: any;
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
 };
@@ -24,6 +22,10 @@ const javaVerMap: any = {
     'Java 8': '1.8'
 };
 const showDialog = async () => {
+    fetch = require('node-fetch');
+    AdmZip = require('adm-zip');
+    const tool = await import('./tool');
+
     const items: vscode.QuickPickItem[] = [
         { label: 'Solon Api', description: 'Solon Lib + Smart-Http + StaticFiles + Cors', detail: 'A full-featured Solon application with extra libraries.' },
         { label: 'Solon Lib', description: 'Solon base shortcut package', detail: 'The core library for building Solon applications.' },
@@ -98,8 +100,7 @@ const showDialog = async () => {
     }
 };
 const downLoad = (data: any) => {
-    return new Promise((resolve) => {
-
+    return new Promise(async (resolve) => {
         let url = `https://solon.noear.org/start/build.do?javaVer=${data.javaVer}&dependencies=${data.dependencies}&project=${data.project}`;
 
         fetch(url).then((res: any) => {
