@@ -106,6 +106,18 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
         return item;
     }
 }
+
+function getAllKeys(obj:any, keys:string[] = []) {
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            if(key.includes('.')) {keys.push(key);}
+            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                getAllKeys(obj[key], keys);
+            }
+        }
+    }
+    return keys;
+}
 const initYmlSuggestion = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
@@ -120,7 +132,10 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
             editor.edit((editBuilder: any) => {
                 let originContent = document.getText().replace(addKey, '');
                 const doc = yaml.load(originContent, 'utf8');
-
+                
+                let compositeKey: string[] | undefined = [];
+                getAllKeys(doc,compositeKey);
+                
                 // todo 处理复合key生成
                 // doc['solon.app'].a=111;
                 
