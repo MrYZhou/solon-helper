@@ -189,9 +189,9 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
             const document = editor.document;
             // 执行编辑操作
             editor.edit((editBuilder: any) => {
-                const doc = yaml.load(originContent, 'utf8');
                 let originContent = document.getText().replace(addKey, '');
 
+                const doc = yaml.load(originContent, 'utf8');
                 let compositeKey: string[] | undefined = [];
                 getAllKeys(doc, compositeKey);
 
