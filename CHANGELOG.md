@@ -1,9 +1,7 @@
-# Change Log
+# 变更日志
 
-All notable changes to the "dy-btn" extension will be documented in this file.
+以下是solon插件更新记录。
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## v1.24.81
 
-## [Unreleased]
-
-- Initial release
+- 首次发布
