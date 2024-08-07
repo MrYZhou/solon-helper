@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import {YmlConfig} from './type';
 
 /**
  * 在vscode中打开命令执行
@@ -103,13 +104,8 @@ const isSolonProject = () => {
     }
 };
 
-type YmlConfig = {
-    name:string
-    defaultValue:boolean
-    description:string
-    moreDetail:string
-};
-let ymlTips: any;
+
+let ymlTips: YmlConfig[];
 function getYmlTips() {
     return new Promise<YmlConfig[]>(async (resolve, reject) => {
         try {

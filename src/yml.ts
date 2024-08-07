@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as  fs from 'fs';
-
+import { YmlConfig } from './tool/type';
 let yaml: any;
 // 获取指定内容行的行号
 function getLineInFile(text: string, targetLine: string): number {
@@ -83,14 +81,14 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
 
         // 添加补全建议
         let items: vscode.CompletionItem[] = [];
-        let config: any[] = await tool.getYmlTips();
+        let config: YmlConfig[] = await tool.getYmlTips();
         config.forEach(element => {
             if (isSubPath(subPath, element.name)) {
                 let tip = new vscode.CompletionItem(element.name, vscode.CompletionItemKind.Property);
                 tip.detail = element.description;
                 tip.command = {
                     command: 'solon-helper.acceptComplete', title: '',
-                    arguments: [editor, element.name]
+                    arguments: [editor, element]
                 };
                 let markdown = new vscode.MarkdownString(element.moreDetail);
                 markdown.isTrusted = true;
@@ -107,10 +105,10 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 
-function getAllKeys(obj:any, keys:string[] = []) {
+function getAllKeys(obj: any, keys: string[] = []) {
     for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
-            if(key.includes('.')) {keys.push(key);}
+            if (key.includes('.')) { keys.push(key); }
             if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
                 getAllKeys(obj[key], keys);
             }
@@ -123,31 +121,33 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
     ));
-    context.subscriptions.push(vscode.commands.registerCommand('solon-helper.acceptComplete', (editor, addKey) => {
+    context.subscriptions.push(vscode.commands.registerCommand('solon-helper.acceptComplete', (editor, element: YmlConfig) => {
         // 读取yml配置信息,更新key后写入文件
         try {
+            let addKey = element.name;
+            let defaultValue = element.defaultValue;
             // 获取文档
             const document = editor.document;
             // 执行编辑操作
             editor.edit((editBuilder: any) => {
                 let originContent = document.getText().replace(addKey, '');
                 const doc = yaml.load(originContent, 'utf8');
-                
+
                 let compositeKey: string[] | undefined = [];
-                getAllKeys(doc,compositeKey);
-                
+                getAllKeys(doc, compositeKey);
+
                 // todo 处理复合key生成
                 // doc['solon.app'].a=111;
-                
+
                 let newYamlData = yaml.dump(doc, {
                     'styles': { '!!null': 'canonical' },
                     'sortKeys': false        // sort object keys
                 });
-                
+
                 editBuilder.replace(new vscode.Range(document.lineAt(0).range.start, document.lineAt(document.lineCount - 1).range.end), newYamlData);
             }).then(() => {
                 // todo 成功替换后跳转指定行，鼠标focus
-                
+
             }).catch((error: any) => {
                 // 错误处理
                 vscode.window.showErrorMessage(`Failed to replace file content: ${error}`);
