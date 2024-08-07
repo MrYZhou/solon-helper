@@ -154,6 +154,32 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
     ));
+    context.subscriptions.push(vscode.languages.registerHoverProvider('yaml', {
+        async provideHover(document, position, token) {
+            try {
+                let line = document.lineAt(position.line);
+                let content = document.getText();
+                let lineText = line.text;
+                let prefixKey = getPrefix(content, lineText, '', -1);
+                let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
+                const tool = await import('./tool');
+                let config: YmlConfig[] = await tool.getYmlTips();
+                let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
+                let hoverMessage = '';
+                for (let index = 0; index < config.length; index++) {
+                    const element = config[index];
+                    if (element.name === key) {
+                        hoverMessage = element.description;
+                        break;
+                    }
+                }
+                return new vscode.Hover(hoverMessage);
+            } catch (error) {
+                return null;
+            }
+        }
+    }));
+
     context.subscriptions.push(vscode.commands.registerCommand('solon-helper.acceptComplete', (editor, element: YmlConfig) => {
         // 读取yml配置信息,更新key后写入文件
         try {
@@ -163,8 +189,8 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
             const document = editor.document;
             // 执行编辑操作
             editor.edit((editBuilder: any) => {
-                let originContent = document.getText().replace(addKey, '');
                 const doc = yaml.load(originContent, 'utf8');
+                let originContent = document.getText().replace(addKey, '');
 
                 let compositeKey: string[] | undefined = [];
                 getAllKeys(doc, compositeKey);
