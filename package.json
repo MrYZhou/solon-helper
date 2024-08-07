@@ -2,7 +2,7 @@
   "name": "solon-helper",
   "displayName": "Solon Helper",
   "description": "vscode的solon插件( vscode plugin for solon )",
-  "version": "1.0.0",
+  "version": "1.24.81",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -29,7 +29,14 @@
     "commands": [
       {
         "command": "solon.initSolonProject",
-        "title": "从模板创建solon项目"
+        "title": "%solon.createProject%",
+        "category": "Solon"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "alt+shift+s",
+        "command": "solon.initSolonProject"
       }
     ]
   },
