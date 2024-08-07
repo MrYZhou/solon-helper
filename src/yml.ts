@@ -116,6 +116,39 @@ function getAllKeys(obj: any, keys: string[] = []) {
     }
     return keys;
 }
+function getOrderKey(key: string, arr: string[]): string[] {
+    if (!key) { return []; };
+    for (let index = 0; index < arr.length; index++) {
+        const center = arr[index];
+        // 处理 'e.a.a2' 会被 'a.a' 这种子结构匹配。故下一个字符判断是点或末尾代表不是其他子串的情况
+        if (key.includes(center) && ['.', ''].includes(key.charAt(key.indexOf(center) + center.length))) {
+            const keyArr = key.split(center);
+            return [
+                ...getOrderKey(keyArr[0].slice(0, -1), arr),
+                center,
+                ...getOrderKey(keyArr[1].slice(1), arr),
+            ];
+        }
+    }
+    return key.split(".");
+}
+
+const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue = '') => {
+    let currentKey = keys[index];
+    if (index + 1 < keys.length) {
+        // 如果不是最后一个键，则继续深入层级
+        if (!currentObj[currentKey]) {
+            // 如果键不存在，创建一个新的对象
+            currentObj[currentKey] = {};
+        }
+        return addKeysToJSON(currentObj[currentKey], keys, index + 1, defaultValue);
+    } else {
+        // 当到达最后一个键时，初始化其值（这里设为空字符串）
+        currentObj[currentKey] = defaultValue;
+        addline = defaultValue ? `${currentKey}: ${defaultValue}` : `${currentKey}: ''`;
+    }
+};
+let addline: string;
 const initYmlSuggestion = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
@@ -125,7 +158,7 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
         // 读取yml配置信息,更新key后写入文件
         try {
             let addKey = element.name;
-            let defaultValue = element.defaultValue;
+            let defaultValue = element.defaultValue ? element.defaultValue : '';
             // 获取文档
             const document = editor.document;
             // 执行编辑操作
@@ -136,8 +169,8 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
                 let compositeKey: string[] | undefined = [];
                 getAllKeys(doc, compositeKey);
 
-                // todo 处理复合key生成
-                // doc['solon.app'].a=111;
+                let orderArr: string[] = getOrderKey(addKey, compositeKey);
+                addKeysToJSON(doc, orderArr, 0, defaultValue as string);
 
                 let newYamlData = yaml.dump(doc, {
                     'styles': { '!!null': 'canonical' },
@@ -146,8 +179,18 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
 
                 editBuilder.replace(new vscode.Range(document.lineAt(0).range.start, document.lineAt(document.lineCount - 1).range.end), newYamlData);
             }).then(() => {
-                // todo 成功替换后跳转指定行，鼠标focus
-
+                // 成功替换后跳转指定行，鼠标focus
+                const editor = vscode.window.activeTextEditor as vscode.TextEditor;
+                if (editor) {
+                    let originContent = editor.document.getText();
+                    const lineNum = getLineInFile(originContent, addline);
+                    if (lineNum < 0) { return; };
+                    const line = editor.document.lineAt(lineNum - 1);
+                    const endOfLinePosition = new vscode.Position(lineNum - 1,
+                        line.text.endsWith("'") ? line.text.length - 1 : line.text.length);
+                    const selection = new vscode.Selection(endOfLinePosition, endOfLinePosition);
+                    editor.selection = selection;
+                }
             }).catch((error: any) => {
                 // 错误处理
                 vscode.window.showErrorMessage(`Failed to replace file content: ${error}`);
