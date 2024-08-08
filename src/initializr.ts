@@ -65,14 +65,17 @@ const showDialog = async () => {
     });
     if (!projectName) { projectName = dependencies + '-app'; }
 
-    let workDir = path.join(os.homedir(), 'Desktop');
-    let item = await vscode.window.showQuickPick(['桌面', '自定义'], {
+    
+    const configuration = vscode.workspace.getConfiguration('solon-helper');
+    let customPath: any = configuration.inspect('customPath');
+    let custom = Object.keys(customPath.globalValue);
+    let workDir = await vscode.window.showQuickPick([...custom, '自定义'], {
         title: '创建solon项目',
         placeHolder: '请选择工作目录',
         ignoreFocusOut: true
     });
-    if (!item) { return; }
-    if (item === '自定义') {
+    if (!workDir) { return; }
+    if (workDir === '自定义') {
         let files = await vscode.window.showOpenDialog({
             canSelectFiles: false,
             canSelectFolders: true,
@@ -88,6 +91,14 @@ const showDialog = async () => {
                 workDir = '';
             }
         }
+    }
+
+    // todo 检测目录
+    let doCreate = await vscode.window.showInformationMessage('目录不存在,是否生成目录',
+        '确定', '不用了'
+    );
+    if (doCreate === '不用了') {
+        workDir = '';
     }
 
     // 下载项目
