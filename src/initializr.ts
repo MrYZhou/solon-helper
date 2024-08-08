@@ -73,7 +73,7 @@ const showDialog = async () => {
         title: '创建solon项目',
         placeHolder: '请选择工作目录',
         ignoreFocusOut: true
-    });
+    }) as string;
     if (!workDir) { return; }
     if (workDir === '自定义') {
         let files = await vscode.window.showOpenDialog({
@@ -91,15 +91,23 @@ const showDialog = async () => {
                 workDir = '';
             }
         }
+    } else {
+        workDir = customPath['globalValue'][workDir];
     }
 
-    // todo 检测目录
-    let doCreate = await vscode.window.showInformationMessage('目录不存在,是否生成目录',
-        '确定', '不用了'
-    );
-    if (doCreate === '不用了') {
-        workDir = '';
+    // 检测目录
+    let doCreate: any = '';
+    if (!fs.existsSync(workDir)) {
+        doCreate = await vscode.window.showInformationMessage('目录不存在,是否生成目录',
+            '确定', '不用了'
+        );
+        if (doCreate === '确定') {
+            await fs.mkdirSync(workDir, { recursive: true });
+        }else{
+            workDir = '';
+        }
     }
+    
 
     // 下载项目
     if (workDir) {
