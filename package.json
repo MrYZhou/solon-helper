@@ -38,7 +38,21 @@
         "key": "alt+shift+s",
         "command": "solon.initSolonProject"
       }
-    ]
+    ],
+    "configuration": {
+        "properties": {
+          "solon-helper.customPath": {
+            "type": "object",
+            "markdownDescription": "自定义快捷创建路径",
+            "patternProperties": {
+              "^[a-zA-Z|a-zA-Z0-9|\u4e00-\u9fa5]*$": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
