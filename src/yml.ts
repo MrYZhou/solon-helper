@@ -144,6 +144,7 @@ const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue 
         return addKeysToJSON(currentObj[currentKey], keys, index + 1, defaultValue);
     } else {
         // 当到达最后一个键时，初始化其值（这里设为空字符串）
+        if (currentObj[currentKey]) {defaultValue = currentObj[currentKey];}
         currentObj[currentKey] = defaultValue;
         addline = defaultValue ? `${currentKey}: ${defaultValue}` : `${currentKey}: ''`;
     }
@@ -216,6 +217,9 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
                         line.text.endsWith("'") ? line.text.length - 1 : line.text.length);
                     const selection = new vscode.Selection(endOfLinePosition, endOfLinePosition);
                     editor.selection = selection;
+                    // focus至于中心
+                    const targetRange = new vscode.Range(endOfLinePosition, endOfLinePosition);
+                    editor.revealRange(targetRange, vscode.TextEditorRevealType.InCenter);
                 }
             }).catch((error: any) => {
                 // 错误处理
