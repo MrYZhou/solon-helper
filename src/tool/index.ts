@@ -121,6 +121,7 @@ function getYmlTips() {
             resolve(ymlTips);
         } catch (error) {
             console.log(error);
+            reject(error);
         }
     });
 }

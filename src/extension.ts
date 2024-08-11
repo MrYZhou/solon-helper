@@ -8,7 +8,7 @@ import {initConfig} from './config';
 
 export function activate(context: vscode.ExtensionContext) {
     checkExtension();
-    initConfig(context);
+    initConfig();
     initYmlSuggestion(context);
     initInitializr(context);
 }

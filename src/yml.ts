@@ -65,7 +65,7 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
     return prefix.endsWith('.') ? prefix : prefix + '.';
 }
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
-    async provideCompletionItems(document: any, position: { character: any; }, token: any, context: any) {
+    async provideCompletionItems(document: any, position: { character: any; }) {
         const tool = await import('./tool');
         if (!yaml) { yaml = require('js-yaml'); }
         // 如果不是solon项目不提示，避免和boot提示冲突。
@@ -99,10 +99,6 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
         return { items };
     }
 
-    resolveCompletionItem(item: any, token: any) {
-        // 高级功能定制
-        return item;
-    }
 }
 
 function getAllKeys(obj: any, keys: string[] = []) {
@@ -156,7 +152,7 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
         new MyYamlCompletionProvider()
     ));
     context.subscriptions.push(vscode.languages.registerHoverProvider('yaml', {
-        async provideHover(document, position, token) {
+        async provideHover(document, position) {
             try {
                 let line = document.lineAt(position.line);
                 let content = document.getText();

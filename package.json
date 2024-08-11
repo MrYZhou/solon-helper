@@ -1,7 +1,7 @@
 {
   "name": "solon-helper",
   "displayName": "Solon Helper",
-  "description": "vscode的solon插件( vscode plugin for solon )",
+  "description": "%description%",
   "version": "1.24.82",
   "engines": {
     "vscode": "^1.92.0"
@@ -17,8 +17,13 @@
   "publisher": "larry",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MrYZhou/solon-helper.git"
+    "url": "https://github.com/MrYZhou/solon-helper"
   },
+  "bugs": {
+    "url": "https://github.com/MrYZhou/solon-helper/issues"
+  },
+  "homepage": "https://github.com/MrYZhou/solon-helper",
+  "preview": false,
   "icon": "favicon.ico",
   "activationEvents": [
     "workspaceContains:**/app.yml",
@@ -40,19 +45,19 @@
       }
     ],
     "configuration": {
-        "properties": {
-          "solon-helper.customPath": {
-            "type": "object",
-            "markdownDescription": "自定义快捷创建路径",
-            "patternProperties": {
-              "^[a-zA-Z|a-zA-Z0-9|\u4e00-\u9fa5]*$": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          }
+      "properties": {
+        "solon-helper.customPath": {
+          "type": "object",
+          "markdownDescription": "自定义快捷创建路径",
+          "patternProperties": {
+            "^[a-zA-Z|a-zA-Z0-9|一-龥]*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
@@ -73,11 +78,14 @@
     "eslint": "^8.39.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.0.4"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.0.4",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "adm-zip": "^0.5.14",
     "js-yaml": "^4.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^3.3.2"
   }
 }
