@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as  fs from 'fs';
-import * as  os from 'os';
-let fetch: any;
+import fetch from 'node-fetch';
 let AdmZip: any;
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
@@ -22,9 +21,8 @@ const javaVerMap: any = {
     'Java 8': '1.8'
 };
 const showDialog = async () => {
-    fetch = require('node-fetch');
-    AdmZip = require('adm-zip');
     const tool = await import('./tool');
+    AdmZip = require('adm-zip');
 
     const items: vscode.QuickPickItem[] = [
         { label: 'Solon Api', description: 'Solon Lib + Smart-Http + StaticFiles + Cors', detail: 'A full-featured Solon application with extra libraries.' },
@@ -65,7 +63,7 @@ const showDialog = async () => {
     });
     if (!projectName) { projectName = dependencies + '-app'; }
 
-    
+
     const configuration = vscode.workspace.getConfiguration('solon-helper');
     let customPath: any = configuration.inspect('customPath');
     let custom = Object.keys(customPath.globalValue);
@@ -88,7 +86,7 @@ const showDialog = async () => {
                 '确定', '不用了'
             );
             if (res === '不用了') {
-                workDir = '';
+                return;
             }
         }
     } else {
@@ -98,16 +96,16 @@ const showDialog = async () => {
     // 检测目录
     let doCreate: any = '';
     if (!fs.existsSync(workDir)) {
-        doCreate = await vscode.window.showInformationMessage('目录不存在,是否生成目录',
+        doCreate = await vscode.window.showInformationMessage(`目录${workDir}不存在,是否生成目录`,
             '确定', '不用了'
         );
         if (doCreate === '确定') {
             await fs.mkdirSync(workDir, { recursive: true });
-        }else{
+        } else {
             workDir = '';
         }
     }
-    
+
 
     // 下载项目
     if (workDir) {
@@ -131,7 +129,7 @@ const downLoad = (data: any) => {
             }));
         }).catch((e: any) => {
             //自定义异常处理
-            resolve(false);
+            resolve(e);
         });
     });
 };

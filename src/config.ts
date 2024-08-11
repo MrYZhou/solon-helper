@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
-const initConfig = (context: vscode.ExtensionContext) => {
+const initConfig = () => {
     const configuration = vscode.workspace.getConfiguration('solon-helper');
     let customPath: any = configuration.inspect('customPath');
     if (!customPath?.globalValue) {
