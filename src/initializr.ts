@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as  fs from 'fs';
-import fetch from 'node-fetch';
+let fetch :any;
 let AdmZip: any;
 let OriginalFs:any;
 const initInitializr = (context: vscode.ExtensionContext) => {
@@ -23,6 +23,7 @@ const javaVerMap: any = {
 };
 const showDialog = async () => {
     const tool = await import('./tool');
+    fetch = require('node-fetch');
     AdmZip = require('adm-zip');
     OriginalFs = require("original-fs");
 
