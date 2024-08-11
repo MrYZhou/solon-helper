@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as  fs from 'fs';
 import fetch from 'node-fetch';
 let AdmZip: any;
+let OriginalFs:any;
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
 };
@@ -23,6 +24,8 @@ const javaVerMap: any = {
 const showDialog = async () => {
     const tool = await import('./tool');
     AdmZip = require('adm-zip');
+    OriginalFs = require("original-fs");
+
 
     const items: vscode.QuickPickItem[] = [
         { label: 'Solon Api', description: 'Solon Lib + Smart-Http + StaticFiles + Cors', detail: 'A full-featured Solon application with extra libraries.' },
@@ -122,7 +125,7 @@ const downLoad = (data: any) => {
 
         fetch(url).then((res: any) => {
             res.body?.pipe(fs.createWriteStream(data.projectPath + '.zip').on('finish', () => {
-                const unzip = new AdmZip(data.projectPath + '.zip'); // 下载压缩包
+                const unzip = new AdmZip(data.projectPath + '.zip',{ fs: OriginalFs }); // 下载压缩包
                 unzip.extractAllTo(data.projectPath, /* overwrite*/ true); // 解压替换本地文件
                 fs.unlink(path.join(data.projectPath + '.zip'), () => { });
                 resolve(true);
