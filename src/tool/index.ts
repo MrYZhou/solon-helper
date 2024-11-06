@@ -1,8 +1,9 @@
-import { exec } from 'child_process';
-import * as path from 'path';
+import { exec as execFn } from 'child_process';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import {YmlConfig} from './type';
+import * as path from 'path';
+
 
 /**
  * 在vscode中打开命令执行
@@ -23,13 +24,15 @@ const runInTerminal = (command: string, sourceDir: string = '') => {
     // 发送命令到终端
     terminal.sendText(command);
 };
+
+
 /**
  * 后台执行命令
  * @param command 命令
  * @param sourceDir 执行位置
  * @returns 
  */
-const execFn = (command: string, sourceDir: string = './'): Promise<boolean> => {
+const exec = (command: string, sourceDir: string = './'): Promise<boolean | string> => {
     return new Promise((resolve, reject) => {
         const options = {
             cwd: sourceDir,
@@ -37,9 +40,11 @@ const execFn = (command: string, sourceDir: string = './'): Promise<boolean> => 
             maxBuffer: 2000 * 1024 * 1024, // 2 GB, which is still quite large but more reasonable
         };
 
-        const execInfo = exec(command, options);
+        let result = '';
+        const execInfo = execFn(command, options);
 
         execInfo?.stdout?.on('data', (data: Buffer | string) => {
+            result += data.toString();
             process.stdout.write(data.toString());
         });
 
@@ -49,7 +54,7 @@ const execFn = (command: string, sourceDir: string = './'): Promise<boolean> => 
 
         execInfo.on('close', (code: number) => {
             if (code === 0) {
-                resolve(true);
+                resolve(result);
             } else {
                 resolve(false);
             }
@@ -105,27 +110,9 @@ const isSolonProject = () => {
 };
 
 
-let ymlTips: YmlConfig[];
-function getYmlTips() {
-    return new Promise<YmlConfig[]>(async (resolve, reject) => {
-        try {
-            if (!ymlTips) {
-                // 读取配置json
-                const extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
-                const resourcePath = vscode.Uri.file(`${extensionPath}/resources/solon-configuration-metadata.json`);
 
-                let contents = await vscode.workspace.fs.readFile(resourcePath);
-                const configContent = contents.toString();
-                ymlTips = JSON.parse(configContent).properties;
-            }
-            resolve(ymlTips);
-        } catch (error) {
-            console.log(error);
-            reject(error);
-        }
-    });
-}
 
-export { execFn, showMessage, getConfig, runInTerminal, isSolonProject, getYmlTips };
+
+export { exec, showMessage, getConfig, runInTerminal, isSolonProject };
 
 

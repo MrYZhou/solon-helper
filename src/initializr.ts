@@ -116,7 +116,7 @@ const showDialog = async () => {
         let projectPath = path.join(workDir, projectName);
         let res = await downLoad({ dependencies, javaVer, project, projectPath });
         if (res) {
-            await tool.execFn('code .', projectPath);
+            await tool.exec('code .', projectPath);
         }
     }
 };

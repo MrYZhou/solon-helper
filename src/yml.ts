@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 import { YmlConfig } from './tool/type';
+import * as path from 'path';
+import * as  fs from 'fs';
+
 let yaml: any;
+let tool: any;
+let AdmZip: any;
 // 获取指定内容行的行号
 function getLineInFile(text: string, targetLine: string): number {
     const lines = text.split("\n");
@@ -67,6 +72,7 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }) {
         const tool = await import('./tool');
+        if (!AdmZip) { AdmZip = require('adm-zip'); }
         if (!yaml) { yaml = require('js-yaml'); }
         // 如果不是solon项目不提示，避免和boot提示冲突。
         if (!tool.isSolonProject()) { return null; };
@@ -81,7 +87,7 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
 
         // 添加补全建议
         let items: vscode.CompletionItem[] = [];
-        let config: YmlConfig[] = await tool.getYmlTips();
+        let config: YmlConfig[] = await getYmlTips();
         config.forEach(element => {
             if (isSubPath(subPath, element.name)) {
                 let tip = new vscode.CompletionItem(element.name, vscode.CompletionItemKind.Property);
@@ -140,7 +146,7 @@ const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue 
         return addKeysToJSON(currentObj[currentKey], keys, index + 1, defaultValue);
     } else {
         // 当到达最后一个键时，初始化其值（这里设为空字符串）
-        if (currentObj[currentKey]) {defaultValue = currentObj[currentKey];}
+        if (currentObj[currentKey]) { defaultValue = currentObj[currentKey]; }
         currentObj[currentKey] = defaultValue;
         addline = defaultValue ? `${currentKey}: ${defaultValue}` : `${currentKey}: ''`;
     }
@@ -160,7 +166,7 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
                 let prefixKey = getPrefix(content, lineText, '', -1);
                 let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
                 const tool = await import('./tool');
-                let config: YmlConfig[] = await tool.getYmlTips();
+                let config: YmlConfig[] = await getYmlTips();
                 let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
                 let hoverMessage = '';
                 for (let index = 0; index < config.length; index++) {
@@ -242,4 +248,116 @@ function isSubPath(subPath: string, mainPath: string) {
     }
     return subIndex === subParts.length;
 }
+
+
+let ymlTips: YmlConfig[];
+let extensionPath: any = '';
+function getYmlTips() {
+    return new Promise<YmlConfig[]>(async (resolve, reject) => {
+        try {
+            if (!ymlTips) {
+                extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
+                const resourcePath = vscode.Uri.file(`${extensionPath}/resources/`);
+                let entries = await vscode.workspace.fs.readDirectory(resourcePath);
+                // 创建配置json
+                
+                // 读取配置json
+                entries.forEach(async (entry) => {
+                    const fileName = entry[0];
+                    const filePath = resourcePath.with({ path: `${resourcePath.path}/${fileName}` });
+                    const content = await vscode.workspace.fs.readFile(filePath);
+                    const configContent = content.toString();
+                    const config = JSON.parse(configContent);
+                    ymlTips = {...config.properties,...ymlTips};
+                });
+            }
+            resolve(ymlTips);
+        } catch (error) {
+            console.log(error);
+            reject(error);
+        }
+    });
+}
+
+
+async function getRepositoryPath(): Promise<string> {
+    // 获取mvn的仓库路径
+    return new Promise(async (resolve, reject) => {
+        let homeConfig = await tool.exec("mvn help:effective-settings", "./");
+        const lines = homeConfig.split("\r\n");
+        lines.forEach(async (input: string) => {
+            const pattern = /localRepository\>(.*)<\/localRepository/;
+            const match = input.match(pattern);
+            if (match) {
+                resolve(match[1]);
+            }
+        });
+    });
+}
+async function ymlInit(projectPath: string) {
+
+    Promise.all([
+        getRepositoryPath(),
+        tool.exec("mvn dependency:tree", projectPath),
+    ]).then(async (res) => {
+        const baseDir = res[0];
+        const result = res[1];
+        const lines = result.split("\r\n");
+        lines.forEach(async (input: string) => {
+            const pattern = /-\s(.*):compile/;
+            const match = input.match(pattern);
+            if (match) {
+                const matchedContent = match[1];
+                const content = matchedContent.split(":");
+                const groupId = content[0];
+                const artifactId = content[1];
+                const version = content[3];
+                initJson(baseDir, groupId, artifactId, version);
+            }
+        });
+
+
+    });
+}
+// 生成到插件内部目录
+async function initJson(baseDir: string, groupId: string, artifactId: string, version: string) {
+
+    // 解压到json文件目录
+    const targetDir = "./json";
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    // 在不在本地仓库中
+    let jarPath = `${baseDir}/${groupId.replace(
+        /\./g,
+        "/"
+    )}/${artifactId}/${version}/${artifactId}-${version}.jar`;
+    // 确保目标jar存在
+    if (!fs.existsSync(jarPath)) {
+        // 下载到本地仓库
+        let getCommand = `mvn dependency:get -DgroupId=${groupId} -DartifactId=${artifactId} -Dversion=${version} -DrepoUrl=https://mirrors.cloud.tencent.com/nexus/repository/maven-public/`;
+        await tool.exec(getCommand, "./");
+    }
+    createJson(targetDir, jarPath, artifactId + "-" + version);
+}
+
+function createJson(targetDir: string, jarPath: string, jarTag: string) {
+    const targetFilePath = path.join(targetDir, jarTag + ".json");
+    // 检测缓存文件
+    if (fs.existsSync(targetFilePath)) {
+        return targetFilePath;
+    }
+
+    const zip = new AdmZip(jarPath);
+    const zipEntry = zip.getEntry(
+        "META-INF/solon/solon-configuration-metadata.json"
+    );
+    // 读取文件内容并写入目标文件
+    if (zipEntry) {
+        const fileData = zipEntry.getData().toString("utf8");
+        fs.writeFileSync(targetFilePath, fileData);
+    }
+}
+
 export { initYmlSuggestion };
