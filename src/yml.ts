@@ -252,15 +252,19 @@ function isSubPath(subPath: string, mainPath: string) {
 
 let ymlTips: YmlConfig[];
 let extensionPath: any = '';
+// 处理下拉数据封装到title
+function solveData(config:any): YmlConfig[]{
+    return [];
+}
 function getYmlTips() {
     return new Promise<YmlConfig[]>(async (resolve, reject) => {
         try {
             if (!ymlTips) {
+                ymlTips = [];
                 extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
                 const resourcePath = vscode.Uri.file(`${extensionPath}/resources/`);
                 let entries = await vscode.workspace.fs.readDirectory(resourcePath);
                 // 创建配置json
-                
                 // 读取配置json
                 entries.forEach(async (entry) => {
                     const fileName = entry[0];
@@ -268,7 +272,7 @@ function getYmlTips() {
                     const content = await vscode.workspace.fs.readFile(filePath);
                     const configContent = content.toString();
                     const config = JSON.parse(configContent);
-                    ymlTips = {...config.properties,...ymlTips};
+                    ymlTips = ymlTips.concat(solveData(config));
                 });
             }
             resolve(ymlTips);
