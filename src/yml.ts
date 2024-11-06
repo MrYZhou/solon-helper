@@ -5,6 +5,7 @@ import * as  fs from 'fs';
 
 let yaml: any;
 let tool: any;
+let pathInfo: any;
 let AdmZip: any;
 // 获取指定内容行的行号
 function getLineInFile(text: string, targetLine: string): number {
@@ -71,7 +72,10 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
 }
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }) {
-        const tool = await import('./tool');
+        if (!tool) {
+            tool = await import('./tool');
+            pathInfo = await tool.getConfig();
+        }
         if (!AdmZip) { AdmZip = require('adm-zip'); }
         if (!yaml) { yaml = require('js-yaml'); }
         // 如果不是solon项目不提示，避免和boot提示冲突。
@@ -165,7 +169,7 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
                 let lineText = line.text;
                 let prefixKey = getPrefix(content, lineText, '', -1);
                 let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
-                const tool = await import('./tool');
+
                 let config: YmlConfig[] = await getYmlTips();
                 let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
                 let hoverMessage = '';
@@ -253,18 +257,19 @@ function isSubPath(subPath: string, mainPath: string) {
 let ymlTips: YmlConfig[];
 let extensionPath: any = '';
 // 处理下拉数据封装到title
-function solveData(config:any): YmlConfig[]{
+function solveData(config: any): YmlConfig[] {
     return [];
 }
 function getYmlTips() {
     return new Promise<YmlConfig[]>(async (resolve, reject) => {
         try {
-            if (!ymlTips) {
+            if (!ymlTips || ymlTips.length === 0) {
                 ymlTips = [];
                 extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
                 const resourcePath = vscode.Uri.file(`${extensionPath}/resources/`);
                 let entries = await vscode.workspace.fs.readDirectory(resourcePath);
                 // 创建配置json
+                ymlInit(pathInfo.workspaceDir);
                 // 读取配置json
                 entries.forEach(async (entry) => {
                     const fileName = entry[0];
@@ -327,7 +332,7 @@ async function ymlInit(projectPath: string) {
 async function initJson(baseDir: string, groupId: string, artifactId: string, version: string) {
 
     // 解压到json文件目录
-    const targetDir = "./json";
+    const targetDir = path.join(extensionPath,'resources');
     if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
     }
