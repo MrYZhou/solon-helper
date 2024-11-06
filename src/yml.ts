@@ -256,9 +256,17 @@ function isSubPath(subPath: string, mainPath: string) {
 
 let ymlTips: YmlConfig[];
 let extensionPath: any = '';
+let currentkey: string[] = [];
 // 处理下拉数据封装到title
 function solveData(config: any): YmlConfig[] {
-    return [];
+    let res: YmlConfig[] = [];
+    config.properties.forEach((data: YmlConfig) => {
+        if (!currentkey.includes(data.name)) {
+            res.push(data);
+            currentkey.push(data.name);
+        }
+    });
+    return res;
 }
 function getYmlTips() {
     return new Promise<YmlConfig[]>(async (resolve, reject) => {
@@ -332,7 +340,7 @@ async function ymlInit(projectPath: string) {
 async function initJson(baseDir: string, groupId: string, artifactId: string, version: string) {
 
     // 解压到json文件目录
-    const targetDir = path.join(extensionPath,'resources');
+    const targetDir = path.join(extensionPath, 'resources');
     if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
     }
