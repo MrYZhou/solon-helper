@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as  fs from 'fs';
-let fetch :any;
+let fetch: any;
 let AdmZip: any;
-let OriginalFs:any;
+let OriginalFs: any;
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
 };
@@ -65,8 +65,15 @@ const showDialog = async () => {
         ignoreFocusOut: true,
         prompt: '项目名称'
     });
-    if (!projectName) { projectName = dependencies + '-app'; }
 
+
+    if (!projectName) {
+        if (projectName?.trim() === '') {
+            projectName = dependencies + '-app';
+        } else {
+            return;
+        }
+    }
 
     const configuration = vscode.workspace.getConfiguration('solon-helper');
     let customPath: any = configuration.inspect('customPath');
@@ -86,12 +93,7 @@ const showDialog = async () => {
         if (files) {
             workDir = files[0].fsPath;
         } else {
-            let res = await vscode.window.showInformationMessage('选择了取消,是否生成到桌面',
-                '确定', '不用了'
-            );
-            if (res === '不用了') {
-                return;
-            }
+            return;
         }
     } else {
         workDir = customPath['globalValue'][workDir];
@@ -126,7 +128,7 @@ const downLoad = (data: any) => {
 
         fetch(url).then((res: any) => {
             res.body?.pipe(fs.createWriteStream(data.projectPath + '.zip').on('finish', () => {
-                const unzip = new AdmZip(data.projectPath + '.zip',{ fs: OriginalFs }); // 下载压缩包
+                const unzip = new AdmZip(data.projectPath + '.zip', { fs: OriginalFs }); // 下载压缩包
                 unzip.extractAllTo(data.projectPath, /* overwrite*/ true); // 解压替换本地文件
                 fs.unlink(path.join(data.projectPath + '.zip'), () => { });
                 resolve(true);
