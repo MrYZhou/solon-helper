@@ -72,15 +72,6 @@ function getPrefix(content: string, line: string, prefix: string, currentNum: nu
 }
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }) {
-        if (!tool) {
-            tool = await import('./tool');
-            pathInfo = await tool.getConfig();
-        }
-        if (!AdmZip) { AdmZip = require('adm-zip'); }
-        if (!yaml) { yaml = require('js-yaml'); }
-        // 如果不是solon项目不提示，避免和boot提示冲突。
-        if (!tool.isSolonProject()) { return null; };
-
         let line: string = document.lineAt(position).text.substring(0, position.character);
         if (line.trim().endsWith(':') || line.trim().startsWith('-')) { return null; }
 
@@ -156,7 +147,16 @@ const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue 
     }
 };
 let addline: string;
-const initYmlSuggestion = (context: vscode.ExtensionContext) => {
+const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
+    if (!tool) {
+        tool = await import('./tool');
+        pathInfo = await tool.getConfig();
+    }
+    if (!AdmZip) { AdmZip = require('adm-zip'); }
+    if (!yaml) { yaml = require('js-yaml'); }
+    // 如果不是solon项目不提示，避免和boot提示冲突。
+    if (!tool.isSolonProject()) { return null; };
+    let config: YmlConfig[] = await getYmlTips();
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
@@ -170,7 +170,6 @@ const initYmlSuggestion = (context: vscode.ExtensionContext) => {
                 let prefixKey = getPrefix(content, lineText, '', -1);
                 let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
 
-                let config: YmlConfig[] = await getYmlTips();
                 let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
                 let hoverMessage = '';
                 for (let index = 0; index < config.length; index++) {
@@ -268,12 +267,19 @@ function solveData(config: any): YmlConfig[] {
     });
     return res;
 }
+let targetDir: string;
+
 function getYmlTips() {
     return new Promise<YmlConfig[]>(async (resolve, reject) => {
         try {
             if (!ymlTips || ymlTips.length === 0) {
                 ymlTips = [];
                 extensionPath = vscode.extensions.getExtension('larry.solon-helper')?.extensionPath;
+                // 解压到json文件目录
+                targetDir = path.join(extensionPath, 'resources');
+                if (!fs.existsSync(targetDir)) {
+                    fs.mkdirSync(targetDir, { recursive: true });
+                }
                 const resourcePath = vscode.Uri.file(`${extensionPath}/resources/`);
                 let entries = await vscode.workspace.fs.readDirectory(resourcePath);
                 // 创建配置json
@@ -311,7 +317,9 @@ async function getRepositoryPath(): Promise<string> {
         });
     });
 }
+
 async function ymlInit(projectPath: string) {
+
 
     Promise.all([
         getRepositoryPath(),
@@ -338,12 +346,6 @@ async function ymlInit(projectPath: string) {
 }
 // 生成到插件内部目录
 async function initJson(baseDir: string, groupId: string, artifactId: string, version: string) {
-
-    // 解压到json文件目录
-    const targetDir = path.join(extensionPath, 'resources');
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
-    }
 
     // 在不在本地仓库中
     let jarPath = `${baseDir}/${groupId.replace(
