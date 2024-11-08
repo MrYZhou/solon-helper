@@ -156,7 +156,7 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
     if (!yaml) { yaml = require('js-yaml'); }
     // 如果不是solon项目不提示，避免和boot提示冲突。
     if (!tool.isSolonProject()) { return null; };
-    let config: YmlConfig[] = await getYmlTips();
+    let config = await getYmlTips();
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
@@ -169,7 +169,7 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
                 let lineText = line.text;
                 let prefixKey = getPrefix(content, lineText, '', -1);
                 let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
-
+                let config: YmlConfig[] = await getYmlTips();
                 let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
                 let hoverMessage = '';
                 for (let index = 0; index < config.length; index++) {
