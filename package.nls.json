@@ -1,4 +1,5 @@
 {
   "solon.createProject": "create solon project from template",
-  "description": "vscode的solon插件"
+  "solon.chatPanel":"caht panel",
+  "description": "vscode plugin for solon"
 }
