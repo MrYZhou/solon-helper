@@ -1,4 +1,5 @@
 {
     "solon.createProject":"从模板创建solon项目",
-    "description":"vscode plugin for solon"
+    "solon.chatPanel":"聊天面板",
+    "description":"vscode的solon插件"
 }
