@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+/**
+ * 检测当前环境的信息是否可用
+ */
 const checkExtension = async () => {
     setTimeout(async () => {
         let pom = await vscode.workspace.findFiles('**/pom.xml');

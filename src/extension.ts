@@ -6,7 +6,10 @@ import { initInitializr } from './initializr';
 import { initYmlSuggestion } from './yml';
 import {initConfig} from './config';
 
-
+/**
+ * 应用入口
+ * @param context 
+ */
 export function activate(context: vscode.ExtensionContext) {
     checkExtension();
     initConfig();

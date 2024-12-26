@@ -4,6 +4,10 @@ import * as  fs from 'fs';
 let fetch: any;
 let AdmZip: any;
 let OriginalFs: any;
+/**
+ * 项目初始化面板
+ * @param context 
+ */
 const initInitializr = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(vscode.commands.registerCommand('solon.initSolonProject', showDialog));
 };
