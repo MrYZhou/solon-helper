@@ -19,7 +19,7 @@ const dependenciesMap: any = {
     'Solon Rpc': 'solon-rpc',
 };
 const javaVerMap: any = {
-    'Java 22': '22',
+    'Java 24': '24',
     'Java 21': '21',
     'Java 17': '17',
     'Java 11': '11',
@@ -48,7 +48,7 @@ const showDialog = async () => {
     const dependencies = dependenciesMap[res.label];
 
     let javaVer = await vscode.window.showQuickPick([
-        'Java 22', 'Java 21', 'Java 17', 'Java 11', 'Java 8'], {
+        'Java 24', 'Java 21', 'Java 17', 'Java 11', 'Java 8'], {
         title: '创建solon项目',
         placeHolder: '请选择java版本', ignoreFocusOut: true
     });
