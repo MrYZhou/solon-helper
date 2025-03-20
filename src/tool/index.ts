@@ -1,9 +1,11 @@
 import { exec as execFn } from 'child_process';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import {YmlConfig} from './type';
+import { YmlConfig } from './type';
 import * as path from 'path';
-
+import { execSync } from "child_process";
+import { join, normalize } from "path";
+import * as os from "os";
 
 /**
  * 在vscode中打开命令执行
@@ -109,10 +111,107 @@ const isSolonProject = () => {
     }
 };
 
+// 桌面api
+// 缓存桌面路径（提升性能）
+let cachedPath: string | null = null;
+
+function getDesktopPath(): string {
+    if (cachedPath) { return cachedPath; }
+
+    try {
+        switch (process.platform) {
+            case "win32":
+                return (cachedPath = getWindowsDesktopPath());
+            case "darwin":
+                return (cachedPath = getMacDesktopPath());
+            case "linux":
+                return (cachedPath = getLinuxDesktopPath());
+            default:
+                throw new Error("UNSUPPORTED_PLATFORM");
+        }
+    } catch (e: any) {
+        console.warn(`[getDesktopPath] Fallback to default: ${e.message}`);
+        const fallback = join(os.homedir(), "Desktop");
+        return (cachedPath = validatePath(fallback) ? fallback : os.homedir());
+    }
+}
+
+// Windows 专用逻辑（兼容64/32位）
+function getWindowsDesktopPath(): string {
+    //  PowerShell命令（最可靠）
+    try {
+        const psPath = execSync(
+            `powershell -NoProfile -Command "[Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)"`,
+            {
+                windowsHide: true,
+                encoding: "utf-8",
+                stdio: ["ignore", "pipe", "ignore"],
+            }
+        ).trim();
+        if (validatePath(psPath)) { return normalize(psPath); }
+    } catch (e) {
+        /* Ignore failure */
+    }
+    // 环境变量回退（终极兼容）
+    const defaultPath = process.env.USERPROFILE
+        ? join(process.env.USERPROFILE, "Desktop")
+        : join(os.homedir(), "Desktop");
+    return validatePath(defaultPath) ? normalize(defaultPath) : os.homedir();
+}
+
+// macOS 多语言支持
+function getMacDesktopPath(): string {
+    const locales: Record<string, string> = {
+        en: "Desktop",
+        zh: "桌面",
+        ja: "デスクトップ",
+        ko: "바탕화면",
+        fr: "Bureau",
+        es: "Escritorio",
+    };
+
+    for (const folder of Object.values(locales)) {
+        const path = join(os.homedir(), folder);
+        if (validatePath(path)) { return path; }
+    }
+    return join(os.homedir(), "Desktop");
+}
+
+// Linux 多桌面环境支持
+function getLinuxDesktopPath(): string {
+    try {
+        const xdgPath = execSync("xdg-user-dir DESKTOP", {
+            encoding: "utf-8",
+        }).trim();
+        if (validatePath(xdgPath)) { return xdgPath; }
+    } catch (e) {
+        /* Ignore failure */
+    }
+
+    const candidates = [
+        process.env.XDG_DESKTOP_DIR,
+        join(os.homedir(), "Desktop"),
+        join(os.homedir(), "桌面"),
+    ].filter((path): path is string => path !== undefined);
+
+    for (const path of candidates) {
+        if (validatePath(path)) { return path; }
+    }
+    return os.homedir();
+}
+
+// 路径有效性验证
+function validatePath(path: string): boolean {
+    try {
+        return fs.existsSync(path) && fs.statSync(path).isDirectory();
+    } catch (e) {
+        return false;
+    }
+}
 
 
 
 
-export { exec, showMessage, getConfig, runInTerminal, isSolonProject };
+export { exec, showMessage, getConfig, runInTerminal, isSolonProject, getDesktopPath };
 
 
