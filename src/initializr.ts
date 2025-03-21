@@ -122,7 +122,11 @@ const showDialog = async () => {
         let projectPath = path.join(workDir, projectName);
         let res = await downLoad({ dependencies, javaVer, project, projectPath });
         if (res) {
-            await tool.exec('code .', projectPath);
+            
+            let openCmd = path.join(`${process.env.VSCODE_CWD}`, 'code');
+            openCmd = `"${openCmd}" "${projectPath}"`;
+           
+            await tool.exec(openCmd, projectPath);
         }
     }
 };

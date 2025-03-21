@@ -2,7 +2,7 @@
   "name": "solon-helper",
   "displayName": "Solon Helper",
   "description": "%description%",
-  "version": "1.24.112",
+  "version": "1.25.31",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -61,7 +61,7 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
-    "build":"vsce package",
+    "build": "vsce package",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
@@ -70,6 +70,7 @@
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
+    "@types/iconv-lite": "^0.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
     "@types/node-fetch": "^2.6.11",
@@ -84,6 +85,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.14",
+    "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "node-fetch": "^2.7.0"
   }
