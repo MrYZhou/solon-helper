@@ -6,7 +6,7 @@ import * as path from 'path';
 import { execSync } from "child_process";
 import { join, normalize } from "path";
 import * as os from "os";
-
+import * as iconv from 'iconv-lite'; // 修正后的导入方式‌:ml-citation{ref="2,7" data="citationList"}
 /**
  * 在vscode中打开命令执行
  * @param command 命令
@@ -36,30 +36,29 @@ const runInTerminal = (command: string, sourceDir: string = '') => {
  */
 const exec = (command: string, sourceDir: string = './'): Promise<boolean | string> => {
     return new Promise((resolve, reject) => {
+        const encoding = process.platform === 'win32' ? 'gbk' : 'utf8';
         const options = {
             cwd: sourceDir,
             timeout: 100000, // 100 seconds
             maxBuffer: 2000 * 1024 * 1024, // 2 GB, which is still quite large but more reasonable
+            encoding: 'buffer' as BufferEncoding, // 确保接收Buffer数据
         };
 
         let result = '';
         const execInfo = execFn(command, options);
-
-        execInfo?.stdout?.on('data', (data: Buffer | string) => {
-            result += data.toString();
-            process.stdout.write(data.toString());
+        execInfo?.stdout?.on('data', (data: Buffer) => {
+            const decoded = iconv.decode(data, encoding);
+            result += decoded;
+            process.stdout.write(decoded);
         });
 
-        execInfo?.stderr?.on('data', (data: Buffer | string) => {
-            console.error('Error:', data.toString());
+        execInfo?.stderr?.on('data', (data: Buffer) => {
+            const decoded = iconv.decode(data, encoding);
+            console.error('Solon Helper :: Error:\n', decoded);
         });
 
         execInfo.on('close', (code: number) => {
-            if (code === 0) {
-                resolve(result);
-            } else {
-                resolve(false);
-            }
+            code === 0 ? resolve(result) : resolve(false);
         });
 
         execInfo.on('error', (error: Error) => {
