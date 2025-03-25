@@ -91,9 +91,21 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
                     command: 'solon-helper.acceptComplete', title: '',
                     arguments: [editor, element]
                 };
-                let markdown = new vscode.MarkdownString(element.moreDetail);
-                markdown.isTrusted = true;
-                tip.documentation = markdown;
+                let values: HintValue[] = hintMap[element.name];
+                let detail = '';
+                if (values) {
+                    values.forEach(item => {
+                        detail += '- ' + item.description + ': ' + item.value + '\n';
+                    });
+                }
+                // 如果存在hint,增加可选值显示
+                if (detail) {
+                    let markdown = new vscode.MarkdownString();
+                    markdown.isTrusted = true;
+                    markdown.appendMarkdown(detail);
+                    tip.documentation = markdown;
+                }
+
                 items.push(tip);
             }
         });
@@ -147,6 +159,11 @@ const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue 
     }
 };
 let addline: string;
+/**
+ * yml提示功能
+ * @param context 
+ * @returns 
+ */
 const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
     if (!tool) {
         tool = await import('./tool');
@@ -251,11 +268,22 @@ function isSubPath(subPath: string, mainPath: string) {
     }
     return subIndex === subParts.length;
 }
-
-
+interface HintValue {
+    // 值
+    value: string;
+    // 描述
+    description: string;
+}
+interface HintType {
+    // 名称
+    name: string;
+    // 提示数组
+    values: HintValue[];
+}
 let ymlTips: YmlConfig[];
 let extensionPath: any = '';
 let currentkey: string[] = [];
+let hintMap: any = {};
 // 处理下拉数据封装到title
 function solveData(config: any): YmlConfig[] {
     let res: YmlConfig[] = [];
@@ -265,6 +293,12 @@ function solveData(config: any): YmlConfig[] {
             currentkey.push(data.name);
         }
     });
+    // 存在hint
+    if (config.hints) {
+        config.hints.forEach((element: HintType) => {
+            hintMap[element.name] = element.values;
+        });
+    }
     return res;
 }
 let targetDir: string;
