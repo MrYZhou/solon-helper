@@ -5,12 +5,10 @@ import { getDesktopPath } from './tool';
  */
 const initConfig = () => {
     const configuration = vscode.workspace.getConfiguration('solon-helper');
-    let customPath: any = configuration.inspect('customPath');
-    if (!customPath?.globalValue) {
-        configuration.update('customPath', {
-            '桌面': getDesktopPath()
-        }, vscode.ConfigurationTarget.Global);
-    }
+    // 每次都要更新为当前电脑的桌面路径
+    configuration.update('customPath', {
+        '桌面': getDesktopPath()
+    }, vscode.ConfigurationTarget.Global);
 };
 
 export { initConfig };

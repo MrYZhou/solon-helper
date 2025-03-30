@@ -122,6 +122,7 @@ const showDialog = async () => {
         let projectPath = path.join(workDir, projectName);
         let res = await downLoad({ dependencies, javaVer, project, projectPath });
         if (res) {
+            tool.showMessage('已生成在目录:' + workDir);
             let openCmd = `"${process.env.VSCODE_CWD}/bin/code" "${projectPath}"`;
             await tool.exec(openCmd);
         }
