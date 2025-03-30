@@ -4,4 +4,17 @@ interface YmlConfig  {
     description:string
     moreDetail:string
 };
-export {YmlConfig};
+interface HintValue {
+    // 值
+    value: string;
+    // 描述
+    description: string;
+}
+interface HintType {
+    // 名称
+    name: string;
+    // 提示数组
+    values: HintValue[];
+}
+
+export { YmlConfig, HintValue, HintType };

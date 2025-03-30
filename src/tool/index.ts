@@ -209,8 +209,146 @@ function validatePath(path: string): boolean {
 }
 
 
+// 获取指定内容行的行号
+function getLineInFile(text: string, targetLine: string): number {
+    const lines = text.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === targetLine.trim()) {
+            return i + 1;
+        }
+    }
+    return -1;
+}
+// 获取第 n 行的内容
+function getNthLine(text: string, n: number): string {
+    // 分割文本为行数组
+    const lines = text.split("\n");
+    // 检查行号是否有效
+    if (n > 0 && n <= lines.length) {
+        // 返回第 n 行的内容（记住数组索引是从0开始的）
+        return lines[n - 1]; // trim() 用于移除行首尾的空白字符
+    } else {
+        // 如果行号无效，可以返回 null 或者抛出错误
+        return '';
+    }
+}
+function getLineSpace(line: string) {
+    let count = 0;
+    for (let char of line) {
+        if (char === ' ') {
+            count++;
+        } else {
+            break;
+        }
+    }
+    return count;
+}
 
+let addline: string;
+// 获取上层限定
+function getPrefix(content: string, line: string, prefix: string, currentNum: number): string {
+    let num = currentNum > 0 ? currentNum : getLineInFile(content, line);
 
-export { exec, showMessage, getConfig, runInTerminal, isSolonProject, getDesktopPath };
+    let count = getLineSpace(line);
+    // 说明存在上层key
+    if (count > 0) {
+        let lastNum = num;
+        let lastLine = '';
+        let spaceCount = 0;
+        do {
+            lastNum--;
+            lastLine = getNthLine(content, lastNum);
+            // 获取行的缩进
+            spaceCount = getLineSpace(lastLine);
+            if (lastNum === 0) { break; }
+
+            // 找上一个不是空行的line且空格缩进只能递减的
+        } while (lastLine.trim() === '' || spaceCount >= count || lastLine.trim().startsWith('-'));
+        prefix = getPrefix(content, lastLine,
+            lastLine.endsWith(':') ?
+                lastLine.trim().replace(':', '') :
+                lastLine.split(':')[0].trim(),
+            lastNum) + prefix;
+    }
+    // 最后一次递归就不用在拼点了。
+    return prefix.endsWith('.') ? prefix : prefix + '.';
+}
+
+/**
+ * 添加键到json对象
+ * @param currentObj 当前json 
+ * @param keys 
+ * @param index 
+ * @param defaultValue 键值 
+ * @returns 
+ */
+const addKeysToJSON = (currentObj: any, keys: string[], index = 0, defaultValue = '') => {
+    let currentKey = keys[index];
+    if (index + 1 < keys.length) {
+        // 如果不是最后一个键，则继续深入层级
+        if (!currentObj[currentKey]) {
+            // 如果键不存在，创建一个新的对象
+            currentObj[currentKey] = {};
+        }
+        return addKeysToJSON(currentObj[currentKey], keys, index + 1, defaultValue);
+    } else {
+        // 当到达最后一个键时，初始化其值（这里设为空字符串）
+        if (currentObj[currentKey]) { defaultValue = currentObj[currentKey]; }
+        currentObj[currentKey] = defaultValue;
+        addline = defaultValue ? `${currentKey}: ${defaultValue}` : `${currentKey}: ''`;
+        return addline;
+    }
+};
+
+/**
+ * 子路径在不在全路径中
+ * @param subPath 子路径
+ * @param mainPath 全路径
+ * @returns 
+ */
+function isSubPath(subPath: string, mainPath: string) {
+    let subParts = subPath.replace('.', '').split('');
+    let mainParts = mainPath.replace('.', '').split('');
+
+    let subIndex = 0;
+    let mainIndex = 0;
+
+    while (mainIndex < mainParts.length && subIndex < subParts.length) {
+        if (subParts[subIndex] === mainParts[mainIndex]) {
+            subIndex++;
+        }
+        mainIndex++;
+    }
+    return subIndex === subParts.length;
+}
+function getAllKeys(obj: any, keys: string[] = []) {
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            if (key.includes('.')) { keys.push(key); }
+            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                getAllKeys(obj[key], keys);
+            }
+        }
+    }
+    return keys;
+}
+function getOrderKey(key: string, arr: string[]): string[] {
+    if (!key) { return []; };
+    for (let index = 0; index < arr.length; index++) {
+        const center = arr[index];
+        // 处理 'e.a.a2' 会被 'a.a' 这种子结构匹配。故下一个字符判断是点或末尾代表不是其他子串的情况
+        if (key.includes(center) && ['.', ''].includes(key.charAt(key.indexOf(center) + center.length))) {
+            const keyArr = key.split(center);
+            return [
+                ...getOrderKey(keyArr[0].slice(0, -1), arr),
+                center,
+                ...getOrderKey(keyArr[1].slice(1), arr),
+            ];
+        }
+    }
+    return key.split(".");
+}
+
+export { exec, showMessage, getConfig, runInTerminal, isSolonProject, getDesktopPath, getPrefix, addKeysToJSON, getLineInFile, isSubPath, getAllKeys,getOrderKey };
 
 
