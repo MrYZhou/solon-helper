@@ -349,6 +349,23 @@ function getOrderKey(key: string, arr: string[]): string[] {
     return key.split(".");
 }
 
-export { exec, showMessage, getConfig, runInTerminal, isSolonProject, getDesktopPath, getPrefix, addKeysToJSON, getLineInFile, isSubPath, getAllKeys,getOrderKey };
+/**
+ * 获取mvn的仓库路径
+ * @returns 
+ */
+async function getRepositoryPath(): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+        let homeConfig = await exec("mvn help:effective-settings", "./") as string;
+        const lines = homeConfig.split("\r\n");
+        lines.forEach(async (input: string) => {
+            const pattern = /localRepository\>(.*)<\/localRepository/;
+            const match = input.match(pattern);
+            if (match) {
+                resolve(match[1]);
+            }
+        });
+    });
+}
+export { exec, showMessage, getConfig, runInTerminal, isSolonProject, getDesktopPath, getPrefix, addKeysToJSON, getLineInFile, isSubPath, getAllKeys, getOrderKey, getRepositoryPath };
 
 

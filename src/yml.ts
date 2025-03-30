@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { YmlConfig, HintType, HintValue } from './tool/type';
-import { getPrefix, addKeysToJSON, getLineInFile, isSubPath, getAllKeys, getOrderKey } from './tool';
+import { getPrefix, addKeysToJSON, getLineInFile, isSubPath, getAllKeys, getOrderKey, getRepositoryPath } from './tool';
 import * as path from 'path';
 import * as  fs from 'fs';
 
@@ -53,9 +53,6 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
 
 }
 
-
-
-
 let addline: string;
 /**
  * yml提示功能
@@ -65,13 +62,13 @@ let addline: string;
 const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
     if (!tool) {
         tool = await import('./tool');
-        pathInfo = await tool.getConfig();
     }
-    if (!AdmZip) { AdmZip = require('adm-zip'); }
-    if (!yaml) { yaml = require('js-yaml'); }
     // 如果不是solon项目不提示，避免和boot提示冲突。
     if (!tool.isSolonProject()) { return null; };
-    let config = await getYmlTips();
+    if (!AdmZip) { AdmZip = require('adm-zip'); }
+    if (!yaml) { yaml = require('js-yaml'); }
+    pathInfo = await tool.getConfig();
+
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
@@ -209,25 +206,7 @@ function getYmlTips() {
     });
 }
 
-
-async function getRepositoryPath(): Promise<string> {
-    // 获取mvn的仓库路径
-    return new Promise(async (resolve, reject) => {
-        let homeConfig = await tool.exec("mvn help:effective-settings", "./");
-        const lines = homeConfig.split("\r\n");
-        lines.forEach(async (input: string) => {
-            const pattern = /localRepository\>(.*)<\/localRepository/;
-            const match = input.match(pattern);
-            if (match) {
-                resolve(match[1]);
-            }
-        });
-    });
-}
-
 async function ymlInit(projectPath: string) {
-
-
     Promise.all([
         getRepositoryPath(),
         tool.exec("mvn dependency:tree", projectPath),
@@ -253,9 +232,8 @@ async function ymlInit(projectPath: string) {
 }
 // 生成到插件内部目录
 async function initJson(baseDir: string, groupId: string, artifactId: string, version: string) {
-
     // 在不在本地仓库中
-    let jarPath = `${baseDir}/${groupId.replace(
+    const jarPath = `${baseDir}/${groupId.replace(
         /\./g,
         "/"
     )}/${artifactId}/${version}/${artifactId}-${version}.jar`;
@@ -274,7 +252,6 @@ function createJson(targetDir: string, jarPath: string, jarTag: string) {
     if (fs.existsSync(targetFilePath)) {
         return targetFilePath;
     }
-
     const zip = new AdmZip(jarPath);
     const zipEntry = zip.getEntry(
         "META-INF/solon/solon-configuration-metadata.json"
