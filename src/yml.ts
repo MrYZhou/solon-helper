@@ -73,6 +73,39 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
     ));
+    // inject hover tip
+    context.subscriptions.push(vscode.languages.registerHoverProvider('java', {
+        async provideHover(document, position) {
+            try {
+                let line = document.lineAt(position.line);
+                let lineText = line.text;
+                if (lineText) {
+                    lineText = lineText.trim();
+                    if (!lineText.startsWith("@Inject(")) {
+                        return null;
+                    }
+                    //解析数据,获取引号内的字符
+                    let key = '';
+                    const tipMatch = lineText.match(/"(.*)"/);
+                    if (tipMatch) { key = tipMatch[1]; };
+                    // 获取到当前yml中配置的属性
+                    let config: YmlConfig[] = await getYmlTips();
+                    let hoverMessage = '';
+                    for (let index = 0; index < config.length; index++) {
+                        const element = config[index];
+                        if (element.name === key) {
+                            hoverMessage = element.description;
+                            break;
+                        }
+                    }
+                    return new vscode.Hover(hoverMessage);
+                }
+
+            } catch (error) {
+                return null;
+            }
+        }
+    }));
     context.subscriptions.push(vscode.languages.registerHoverProvider('yaml', {
         async provideHover(document, position) {
             try {
@@ -81,8 +114,8 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
                 let lineText = line.text;
                 let prefixKey = getPrefix(content, lineText, '', -1);
                 let subPath = (prefixKey === '.' ? '' : prefixKey) + lineText.trim();
-                let config: YmlConfig[] = await getYmlTips();
                 let key = subPath.includes(":") ? subPath.split(":")[0] : subPath;
+                let config: YmlConfig[] = await getYmlTips();
                 let hoverMessage = '';
                 for (let index = 0; index < config.length; index++) {
                     const element = config[index];
