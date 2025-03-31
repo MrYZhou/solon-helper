@@ -8,7 +8,57 @@ let yaml: any;
 let tool: any;
 let pathInfo: any;
 let AdmZip: any;
+class MyInjectCompletionProvider implements vscode.CompletionItemProvider {
+    async provideCompletionItems(document: any, position: { character: any; }) {
+        let lineText: string = document.lineAt(position).text.substring(0, position.character);
 
+        let key = '';
+        if (lineText) {
+            lineText = lineText.trim();
+            if (!lineText.startsWith("@Inject(")) {
+                return null;
+            }
+            //解析数据,获取引号内的字符
+            const tipMatch = lineText.match(/"(.*)/);
+            if (tipMatch) { key = tipMatch[1]; };
+            // 字符是空则不提示
+            if (!key) { return; };
+        }
+        // 添加补全建议
+        const editor = vscode.window.activeTextEditor as vscode.TextEditor;
+        let items: vscode.CompletionItem[] = [];
+        let config: YmlConfig[] = await getYmlTips();
+        let allTips = await getAllInjectTip();
+        config.forEach(element => {
+            // 当前输入的字符是项目中已经配置的属性且是属性的子串
+            if (allTips.includes(element.name) && isSubPath(key, element.name)) {
+                let tip = new vscode.CompletionItem(element.name, vscode.CompletionItemKind.Property);
+                tip.detail = element.description;
+                tip.command = {
+                    command: 'solon-helper.acceptComplete', title: '',
+                    arguments: [editor, element]
+                };
+                let values: HintValue[] = hintMap[element.name];
+                let detail = '';
+                if (values) {
+                    values.forEach(item => {
+                        detail += '- ' + item.description + ': ' + item.value + '\n';
+                    });
+                }
+                // 如果存在hint,增加可选值显示
+                if (detail) {
+                    let markdown = new vscode.MarkdownString();
+                    markdown.isTrusted = true;
+                    markdown.appendMarkdown(detail);
+                    tip.documentation = markdown;
+                }
+
+                items.push(tip);
+            }
+        });
+        return { items };
+    }
+}
 class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     async provideCompletionItems(document: any, position: { character: any; }) {
         let line: string = document.lineAt(position).text.substring(0, position.character);
@@ -53,6 +103,27 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
 
 }
 
+function getAllInjectTip() {
+    return new Promise<string[]>(async (resolve, reject) => {
+        // 1.读取src/main目录下所有的yml和yaml结尾的文件的内容
+        const pathInfo = await tool.getConfig();
+        let allTips: string[] = [];
+        const resourcesPath = vscode.Uri.file(path.join(pathInfo.workspaceDir, "src", "main", "resources"));
+        let entries = await vscode.workspace.fs.readDirectory(resourcesPath);
+        let jsonData = {};
+        for (const [fileName, fileType] of entries) {
+            if (fileName.endsWith('.yml') || fileName.endsWith('.yaml')) {
+                const filePath = resourcesPath.with({ path: `${resourcesPath.path}/${fileName}` });
+                const content = await vscode.workspace.fs.readFile(filePath);
+                const doc = yaml.load(content, 'utf8');
+                jsonData = { ...jsonData, ...doc };               
+            }
+        }
+        // todo json变扁平key
+        resolve(allTips);
+    });
+
+}
 let addline: string;
 /**
  * yml提示功能
@@ -73,6 +144,10 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
         ['yaml', 'yml'],
         new MyYamlCompletionProvider()
     ));
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
+        ['java'],
+        new MyInjectCompletionProvider()
+    ));
     // inject hover tip
     context.subscriptions.push(vscode.languages.registerHoverProvider('java', {
         async provideHover(document, position) {
@@ -88,6 +163,7 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
                     let key = '';
                     const tipMatch = lineText.match(/"(.*)"/);
                     if (tipMatch) { key = tipMatch[1]; };
+                    if (!key) { return; };
                     // 获取到当前yml中配置的属性
                     let config: YmlConfig[] = await getYmlTips();
                     let hoverMessage = '';
@@ -141,7 +217,6 @@ const initYmlSuggestion = async (context: vscode.ExtensionContext) => {
             // 执行编辑操作
             editor.edit((editBuilder: any) => {
                 let originContent = document.getText().replace(addKey, '');
-
                 const doc = yaml.load(originContent, 'utf8');
                 let compositeKey: string[] | undefined = [];
                 getAllKeys(doc, compositeKey);
@@ -217,14 +292,14 @@ function getYmlTips() {
                 if (!fs.existsSync(targetDir)) {
                     fs.mkdirSync(targetDir, { recursive: true });
                 }
-                const resourcePath = vscode.Uri.file(`${extensionPath}/resources/`);
-                let entries = await vscode.workspace.fs.readDirectory(resourcePath);
+                const resourcesPath = vscode.Uri.file(`${extensionPath}/resources/`);
+                let entries = await vscode.workspace.fs.readDirectory(resourcesPath);
                 // 创建配置json
                 ymlInit(pathInfo.workspaceDir);
                 // 读取配置json
                 entries.forEach(async (entry) => {
                     const fileName = entry[0];
-                    const filePath = resourcePath.with({ path: `${resourcePath.path}/${fileName}` });
+                    const filePath = resourcesPath.with({ path: `${resourcesPath.path}/${fileName}` });
                     const content = await vscode.workspace.fs.readFile(filePath);
                     const configContent = content.toString();
                     const config = JSON.parse(configContent);
