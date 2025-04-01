@@ -4,3 +4,5 @@
 
 3.发布
 vsce package
+
+https://marketplace.visualstudio.com/manage/publishers/larry

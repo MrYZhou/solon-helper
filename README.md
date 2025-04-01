@@ -7,7 +7,9 @@ vscode 的 solon 插件
 ![alt text](./doc/1.png)
 
 2. 对 yml,yaml 配置文件增加键值提示
-![alt text](./doc/2.png)
+   ![alt text](./doc/2.png)
+
+3. 对 inject 属性注入增加提示
 
 vscode plugin for solon
 
@@ -15,6 +17,7 @@ Function:
 
 1. Create a project from a template
 2. Add key value prompts to yml and yaml configuration files
+3. Add hints for inject property injection
 
 other:
 base on jdk environment
