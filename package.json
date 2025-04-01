@@ -2,7 +2,7 @@
   "name": "solon-helper",
   "displayName": "Solon Helper",
   "description": "%description%",
-  "version": "1.25.41",
+  "version": "1.25.42",
   "engines": {
     "vscode": "^1.92.0"
   },

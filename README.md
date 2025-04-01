@@ -1,17 +1,20 @@
-vscode 的 solon 插件
+solon 的 vscode 插件
 
 功能：
 
 1. 从模板创建项目
 
-![alt text](./doc/1.png)
+   ![alt text](https://github.com/MrYZhou/solon-helper/blob/main/doc/1.png?raw=true)
 
 2. 对 yml,yaml 配置文件增加键值提示
-   ![alt text](./doc/2.png)
+
+   ![alt text](https://github.com/MrYZhou/solon-helper/blob/main/doc/2.png?raw=true)
 
 3. 对 inject 属性注入增加提示
 
-vscode plugin for solon
+   ![alt text](https://github.com/MrYZhou/solon-helper/blob/main/doc/3.png?raw=true)
+
+solon plugin for vscode
 
 Function:
 
