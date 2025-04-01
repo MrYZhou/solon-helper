@@ -102,7 +102,28 @@ class MyYamlCompletionProvider implements vscode.CompletionItemProvider {
     }
 
 }
+interface NestedObject {
+    [key: string]: NestedObject | unknown
+}
 
+function flattenObjectKeys<T extends NestedObject>(obj: T): string[] {
+    const result: string[] = [];
+
+    const traverse = (currentObj: object, parentKey: string = '') => {
+        Object.entries(currentObj).forEach(([key, value]) => {
+            const newKey = parentKey ? `${parentKey}.${key}` : key;
+
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                traverse(value as NestedObject, newKey);
+            } else {
+                result.push(newKey);
+            }
+        });
+    };
+
+    traverse(obj);
+    return [...new Set(result)]; // 去重处理‌:ml-citation{ref="6" data="citationList"}
+}
 function getAllInjectTip() {
     return new Promise<string[]>(async (resolve, reject) => {
         // 1.读取src/main目录下所有的yml和yaml结尾的文件的内容
@@ -116,10 +137,11 @@ function getAllInjectTip() {
                 const filePath = resourcesPath.with({ path: `${resourcesPath.path}/${fileName}` });
                 const content = await vscode.workspace.fs.readFile(filePath);
                 const doc = yaml.load(content, 'utf8');
-                jsonData = { ...jsonData, ...doc };               
+                jsonData = { ...jsonData, ...doc };
             }
         }
         // todo json变扁平key
+        allTips = flattenObjectKeys(jsonData);
         resolve(allTips);
     });
 
